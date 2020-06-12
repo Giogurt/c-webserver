@@ -73,36 +73,37 @@ int main(int argc, char const *argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    //This loop will let us keep receiving request.
+    // This loop will let us keep receiving request.
     while(1) {
         printf("\n+++++++ Waiting for new connection ++++++++\n\n");
         
-        //Here the second socket is opened to accept request made to it.
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0)
-        {
+        // Here the second socket is opened to accept request made to it.
+        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0){
             perror("In accept");
             exit(EXIT_FAILURE);
         }
 
-        //We are creating a child process to manage a particular request while
-        //the main program continues to accept other requests
+        // We are creating a child process to manage a particular request while
+        // the main program continues to accept other requests
         if(!fork()){
-            //since this is another thread we dont want to have two sockets for the server.
+
+            // Since this is another thread we dont want to have two sockets for the server.
             close(server_fd);
             char buffer[30000] = {0};
-            //The request is read
-            valread = read(new_socket , buffer, 30000);
+
+            // The request is read
+            valread = read(new_socket, buffer, 30000);
             printf("%s\n", buffer);
 
-            //Variables to be able to read the file we are going to serve
+            // Variables to be able to read the file we are going to serve
             int html_fd, sz;
 
-            //save the size of the file to serve and create a buffer that will be able
-            //to read that amount of data.
+            // Save the size of the file to serve and create a buffer that will be able
+            // to read that amount of data.
             long file_length = fsize("TC2025.html");
             char c[file_length];
             
-            //Starts the process of opening and reading the file to serve
+            // Starts the process of opening and reading the file to serve
             html_fd = open("TC2025.html", O_RDONLY);
             if (html_fd < 0) { perror("r1"); exit(1); }
             
@@ -111,24 +112,25 @@ int main(int argc, char const *argv[]) {
             c[sz] = '\0';
             // printf("Those bytes are as follows: %s\n", c);
 
-            //We create a new string that will contain the complete header we will be sending
-            //to the client.
-            char * new_str ;
-            //We try giving the new string a length of the base resoonse + the 
-            //length of the file
+            // We create a new string that will contain the complete header we will be sending
+            // to the client.
+            char * new_str;
+
+            // We try giving the new string a length of the base response + the 
+            // length of the file
             if((new_str = malloc(strlen(str_response)+strlen(c)+1)) != NULL){
-                new_str[0] = '\0';   // ensures the memory is an empty string
-                //We append the response to the new (empty) string
+                new_str[0] = '\0';   // Ensures the memory is an empty string
+                // We append the response to the new (empty) string
                 strcat(new_str,str_response);
-                //We append the content of the file after the response to the new string
+                // We append the content of the file after the response to the new string
                 strcat(new_str,c);
             } else {
                 perror("malloc failed!\n");
                 exit(1);
             }
 
-            //We write in the socket the complete header (the string we just created)
-            //so the client can now see the file
+            // We write in the socket the complete header (the string we just created)
+            // so the client can now see the file
             write(new_socket , new_str , strlen(new_str));
 
             printf("------------------File Served-------------------\n");
